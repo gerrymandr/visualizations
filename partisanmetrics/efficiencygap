@@ -77,7 +77,6 @@ for i in range(0, num_figs):
 
     # efficiency gap for this map is the sum of the districts' efficiency gaps
     this_eg = sum(cd['effgap'])
-
     # save efficiency gap of initial map separately
     if i == 0:
         eg_init = this_eg
