@@ -107,6 +107,11 @@ ui <- fluidPage(
       p("Click on a state to view a summary of its congressional redistricting laws."),
       br(),
       p("Choose a variable on the menu to view the national distribution."),
+      br(),
+      br(),
+      br(),
+      p("Zach Levitt and Ethan Ackerman", style = "color:gray"),
+      p("Voting Rights Data Institute, June 2018", style = "color:gray"),
       width = 3
     ),
     
