@@ -2,12 +2,8 @@
 #Zach Levitt and Ethan Ackerman
 
 library(shiny)
-library(maps)
-library(mapproj)
 library(leaflet)
-library(RColorBrewer)
 library(tigris)
-library(sf)
 
 #Retrieve state boundaries and merge with state rules file
 states <- states(cb = TRUE)
