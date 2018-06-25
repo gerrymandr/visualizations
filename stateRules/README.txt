@@ -6,5 +6,5 @@ This R Shiny App downloads a state boundary file from the R tigris package and m
 
 The state redistricting data can be accessed at this link: https://docs.google.com/spreadsheets/d/1YhPhwGKIqbtwPvz6mbHkTj68WJMim2lPmtVrO4cfP4A/edit#gid=0. It must be downloaded as a CSV, the name changed to stateRules.csv, and within a folder called data in the home directory of the R Shiny App. 
 
-The app is running online at https://vrdiapps.shinyapps.io/stateRules/. 
+The app is running online at https://vrdiapps.shinyapps.io/stateRules/. Watch out, it takes a very long time to load!
 
