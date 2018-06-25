@@ -1,0 +1,142 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jun 20 11:37:41 2018
+
+@author: Mallory
+"""
+
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import os
+import numpy as np
+import matplotlib.animation as animation
+import json
+import matplotlib.image as mpimg
+import pandas as pd
+from matplotlib import gridspec
+
+pd.set_option('chained_assignment', None)
+
+# read in chain run and a geojson with the same base unit
+data_w = json.load(open("mo_chain_run.json"))
+df = gpd.read_file("mo_dists.geojson")
+
+# add a column to df with the district assignment for each chain run
+for i in range(1, len(data_w.keys())+1):
+    df["CD"+str(i)] = df["GEOID10"].map(data_w[str(i)])
+
+N = len(df['STATEFP10'])
+
+# specify election to use as republican and democratic votes
+df["rvotes"] = df['GOV_RV08']
+df['dvotes'] = df['GOV_DV08']
+
+# number of figures to output (should be len(data_w.keys())+1 for whole chain)
+num_figs = len(data_w.keys())+1  # len(data_w.keys())+1
+# list of mapwide efficiency gap per plan
+eg_overall = []
+# list of p-value of the original map up to nth chain run
+pvals = []
+# storing district numbers with jitter for efficiency gap by district plot
+dist_num = []
+# storing efficiency gaps for efficiency gap by district plot
+dist_egs = []
+# storing difference between plan efficiency gap & original
+dist_diff = []
+# used for calculating p-value
+epsilon = 0
+
+# loop runs on each chain run
+for i in range(0, num_figs):
+    # calculate metrics for original map
+    if i == 0:
+        cd = df.groupby(by=['CD']).sum()
+    # total number of votes by party aggregated to district
+    else:
+        cd = df.groupby(by=["CD"+str(i)]).sum()
+
+    # calculating relevant numbers for efficiency gap
+    cd['totalvotes'] = cd['rvotes']+cd['dvotes']
+    cd['propr'] = cd['rvotes']/cd['totalvotes']
+    cd['propd'] = cd['dvotes']/cd['totalvotes']
+    cd['halfvotes'] = cd['totalvotes']/2
+    cd['win'] = "R"
+    cd['rwaste'] = cd['rvotes']
+    cd['dwaste'] = cd['dvotes']
+
+    # calculating wasted votes for winning party by subtracting halfvotes
+    N = len(cd.index)    
+    for j in range(N):
+        if cd['dvotes'][j] > cd['rvotes'][j]:
+            cd['win'][j] = 'D'
+            cd['dwaste'][j] = cd['dvotes'][j]-cd['halfvotes'][j]
+        else:
+            cd['rwaste'][j] = cd['rvotes'][j]-cd['halfvotes'][j]
+
+    cd['effgap'] = (cd['rwaste']-cd['dwaste']) / cd['totalvotes']
+
+    # efficiency gap for this map is the sum of the districts' efficiency gaps
+    this_eg = sum(cd['effgap'])
+
+    # save efficiency gap of initial map separately
+    if i == 0:
+        eg_init = this_eg
+        dist_eg_init = cd['effgap']
+        continue
+
+    eg_overall.append(this_eg)
+
+    #  does the original map have a more extreme EG than this chain run
+    if(abs(eg_init) > abs(this_eg)):
+        epsilon += 0
+
+    # calculate p-value
+    this_pval = (2*epsilon/(i))**.5
+    pvals.append(this_pval)
+
+    # add jitter to the district number for a more readable plot
+    dist_num.append(np.random.normal(0, .1, N) + range(1, N+1))
+    dist_egs.append(cd['effgap'])
+    dist_diff.append(cd['effgap'] - dist_eg_init)
+
+    fig = plt.figure(figsize=[12, 12])
+    gs = gridspec.GridSpec(4, 2)
+
+    # Plot efficiency gap by district
+    ax1 = fig.add_subplot(gs[0, 0])
+    ax1.scatter(dist_num, dist_egs, alpha=.2,
+                c=np.around(dist_num), cmap='Dark2')
+    ax1.scatter(range(1, len(cd.index)+1), dist_eg_init,
+                c='gray', marker='.')
+    ax1.set_xlim(xmin=.8)
+    ax1.set_ylabel('Efficiency Gap')
+    ax1.set_xlabel('District')
+    # Plot distance btw EG for plans and original (by district)
+    ax2 = fig.add_subplot(gs[0, 1])
+    ax2.scatter(dist_num, dist_diff, alpha=.2,
+                c=np.around(dist_num), cmap='Dark2')
+    ax2.plot([.8, N], [0, 0])
+    #ax2.set_xlim(xmin=.8)
+    ax2.set_ylabel('Change in Efficiency Gap')
+    ax2.set_xlabel('District')
+    # line graph of efficiency gap over plans
+    ax3 = fig.add_subplot(gs[1, 0])
+    ax3.plot(range(1, i+1), eg_overall)
+    ax3.set_xlim(xmax=num_figs)
+    ax3.plot([1, num_figs], [eg_init, eg_init], 'r:')
+    ax3.set_xlabel('Plan Index')
+    # Histogram over plans
+    ax4 = fig.add_subplot(gs[1, 1])
+    ax4.hist(eg_overall)
+    ax4.axvline(x=eg_init)
+    ax4.set_ylabel('Frequency')
+    ax4.set_xlabel('Statewide Efficiency Gap')
+    # Make the GeoPandas plot
+    ax5 = fig.add_subplot(gs[2:, :])
+    df.plot(ax=ax5, column="CD"+str(i), cmap='Dark2')
+    ax5.axis('equal')
+    gs.update(wspace=0.5, hspace=0.5)
+    fig = plt.gcf()
+    # save png
+    plt.savefig("MO_eg%04d.png" % i)
+    plt.close()
