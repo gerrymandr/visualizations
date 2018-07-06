@@ -1,11 +1,15 @@
-EFFICIENCY GAP VIZ
+A call would look like this:
+compactness_viz("PA.geojson", "PA_chain.json", name='viz%03d.png')
 
-For each step of the chain, we generate a png displaying the partisan metrics and the district maps. In the top half, we have a 4x4 grid, displaying as follows:\par
-[TOP, LEFT]: Efficiency gap by district. The gray points show values for the initial map by district. As the chain runs, additional points are added to the scatterplot for the efficiency gaps per district by chain run. They are color coded to match the map and some horizontal jitter was added to accentuate densities. Positive values indicate that Republicans are wasting more votes.\par
-[TOP, RIGHT]: Chain in efficiency gap by district. As the chain runs, additional points are added to the scatterplot for the change in efficiency gaps per district by chain run. They are color coded to match the map and some horizontal jitter was added to accentuate densities. The horizontal line at y=0 indicates where districts experiencing no change in efficiency gap would lie.\par
-[BOTTOM, LEFT]: Statewide efficiency by plan. Calculated by summing the efficiency gaps across districts. The horizontal direction indicates time as the chain runs and each point along the line is the statewide efficiency gap for one plan in the chain. The red, horizontal line displays the initial statewide efficiency gap.\par
-[BOTTOM, RIGHT]: Histogram of statewide efficiency gaps. Updated with each additional plan in the chain. Displays the frequency of values for statewide efficiency gap The vertical line indicates the statewide efficiency gap of the initial plan. A vertical line further from histogram indicates greater significance.\par
-The map below is colored by district. The user can update the number of figures to generate, the columns used to tabulate Republican and Democratic votes, the state map geojson file, and the json containing runs of the chain.\par
+The script will output pngs sequentially into the directory at a rate of about thirty figures per minute. 
+
+Then, use console to string together pngs, where [name] is your png file name format (name variable above)
+[output] is what you want your MP4 video file to be called
+
+ffmpeg -framerate 10 -i [name].png -c:v libx264 -profile:v high -crf 20 -pix_fmt yuv420p [output].mp4
+
+Sample output:
+https://drive.google.com/file/d/1JQ6PFx-HRcGk71xGOBRsv_ZAcnjDmcN-/view?usp=sharing
 
 
 COMPACTNESS VIZ
@@ -19,13 +23,25 @@ COMPACTNESS VIZ
     :step: output a png after every n steps in chain
     :statewide: how to aggregate district level scores (add, min, max)
     :inverse: work with reciprocal of scores?
-    :name: what to call pngs
+    :name: what to call pngs, of the form 'name%0#d.png,' where # is the number of digits of the number of steps of
+    	   chain in your json (ie, 3 for 100 steps in chain) 
     :returns: a png for each step in the chain. 
     """
 
+Plot output is generally divided into two halves. The bottom half is a plot of the corresponding map at a given step. 
+The top half is a 2x2 grid with plots of compactness metrics as follows:
 
-Bottom half is a plot of the corresponding map at a given step. The top half is a 2x2 grid
-with plots of compactness metrics as follows:
+
+EFFICIENCY GAP VIZ
+
+For each step of the chain, we generate a png displaying the partisan metrics and the district maps. In the top half, we have a 4x4 grid, displaying as follows:\par
+[TOP, LEFT]: Efficiency gap by district. The gray points show values for the initial map by district. As the chain runs, additional points are added to the scatterplot for the efficiency gaps per district by chain run. They are color coded to match the map and some horizontal jitter was added to accentuate densities. Positive values indicate that Republicans are wasting more votes.\par
+[TOP, RIGHT]: Chain in efficiency gap by district. As the chain runs, additional points are added to the scatterplot for the change in efficiency gaps per district by chain run. They are color coded to match the map and some horizontal jitter was added to accentuate densities. The horizontal line at y=0 indicates where districts experiencing no change in efficiency gap would lie.\par
+[BOTTOM, LEFT]: Statewide efficiency by plan. Calculated by summing the efficiency gaps across districts. The horizontal direction indicates time as the chain runs and each point along the line is the statewide efficiency gap for one plan in the chain. The red, horizontal line displays the initial statewide efficiency gap.\par
+[BOTTOM, RIGHT]: Histogram of statewide efficiency gaps. Updated with each additional plan in the chain. Displays the frequency of values for statewide efficiency gap The vertical line indicates the statewide efficiency gap of the initial plan. A vertical line further from histogram indicates greater significance.\par
+The map below is colored by district. The user can update the number of figures to generate, the columns used to tabulate Republican and Democratic votes, the state map geojson file, and the json containing runs of the chain.\par
+
+COMPACTNESS VIZ
 
 TOP, LEFT - scatterplot of compactness score by district. gray dots are the initial scores. 
 	    proposed plans are shown in colors corresponding to map colors
@@ -37,11 +53,4 @@ BOTTOM, RIGHT - histogram of statewide scores across plans.
                 initial value plotted as a red vertical line.
 
 
-Then, use console to string together pngs, where [name] is your png file name format (name variable above)
-[output] is what you want your MP4 video file to be called
 
-ffmpeg -framerate 10 -i [name].png -c:v libx264 -profile:v high -crf 20 -pix_fmt yuv420p [output].mp4
-
-Sample output:
-
-https://drive.google.com/file/d/1JQ6PFx-HRcGk71xGOBRsv_ZAcnjDmcN-/view?usp=sharing
